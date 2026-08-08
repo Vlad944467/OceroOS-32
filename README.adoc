@@ -111,7 +111,6 @@ OceroOS-32/
 │       └── video.c   
 ├── images/
 ├── LICENSE.adoc 
-├── Makefile
 └── README.adoc
 ----
 
