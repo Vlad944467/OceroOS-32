@@ -48,17 +48,6 @@ image:https://img.shields.io/badge/QEMU-supported-blue.svg[QEMU]
 | `par` | Табличные команды
 |===
 
-== Сборка
-
-=== Требования
-
-[source,bash]
-----
-sudo apt install gcc nasm qemu-system-x86 make gcc-multilib
-----
-
-=== Ручная сборка
-
 [source,bash]
 ----
 #Запуск в QEMU
