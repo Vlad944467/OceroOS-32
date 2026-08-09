@@ -7,7 +7,7 @@ image:https://img.shields.io/badge/OS-32--bit-blue.svg[32-bit]
 image:https://img.shields.io/badge/lang-C-blue.svg[C]
 image:https://img.shields.io/badge/license-GPLv3-green.svg[GPLv3]
 
-**32-битное монолитное ядро, написанное на C и Assembly**
+**32-битная монолитная ОС, написанное на C и Assembly**
 
 
 == Возможности
