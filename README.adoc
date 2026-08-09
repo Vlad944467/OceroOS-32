@@ -61,24 +61,7 @@ sudo apt install gcc nasm qemu-system-x86 make gcc-multilib
 
 [source,bash]
 ----
-# 1. Сборка загрузчика
-nasm -f elf32 src/boot/boot.asm -o boot.o
-
-# 2. Компиляция ядра
-gcc -m32 -ffreestanding -nostdlib -c src/kernel/PMocero.c -o PMocero.o
-gcc -m32 -ffreestanding -nostdlib -c src/kernel/commands.c -o commands.o
-gcc -m32 -ffreestanding -nostdlib -c src/kernel/read_keyboard.c -o read_keyboard.o
-gcc -m32 -ffreestanding -nostdlib -c src/kernel/ata.c -o ata.o
-gcc -m32 -ffreestanding -nostdlib -c src/kernel/video.c -o video.o
-gcc -m32 -ffreestanding -nostdlib -c src/kernel/elf.c -o elf.o
-gcc -m32 -ffreestanding -nostdlib -c src/kernel/init.c -o init.o
-gcc -m32 -ffreestanding -nostdlib -c src/kernel/Twindows.c -o Twindows.o
-gcc -m32 -ffreestanding -nostdlib -c src/kernel/fs/OFS.c -o OFS.o
-
-# 3. Линковка
-ld -m elf_i386 -T src/boot/linker.ld -o OceroOS.elf boot.o PMocero.o commands.o read_keyboard.o ata.o video.o elf.o init.o Twindows.o OFS.o
-
-# 4. Запуск в QEMU
+#Запуск в QEMU
 qemu-system-i386 -kernel OceroOS.elf
 ----
 
