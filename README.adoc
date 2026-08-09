@@ -85,10 +85,7 @@ qemu-system-i386 -kernel OceroOS.elf -hda fat16.img
 
 [source,tree]
 ----
-OceroOS-32/
-├── boot/
-│   ├── boot.asm          
-│   └── linker.ld       
+OceroOS-32/       
 ├── grub/
 │   └── grub.cfg         
 ├── docs/
