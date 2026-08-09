@@ -1,0 +1,162 @@
+= OceroOS-32
+:author: Vlad944467
+:revdate: 2026-08-09
+:lang: ru
+
+32-битная ОС на C и Assembly.
+
+== Возможности
+
+* 32-битный защищённый режим
+* Загрузка через GRUB (Multiboot)
+* Клавиатура PS/2
+* VGA текст 80x25
+* ATA драйвер (чтение/запись)
+* OFS — своя файловая система
+* ELF-загрузчик
+* TUI (псевдографические окна)
+* Шелл с историей
+* Команды: help, clear, reboot, shutdown, echo, edit, notes, save, load, ls, cat, write, run, settings, note2, disk, tt
+
+== Сборка
+
+=== Ручная сборка (пошагово)
+
+[source,bash]
+----
+# 1. Сборка загрузчика
+nasm -f elf32 src/boot/boot.asm -o boot.o
+
+# 2. Компиляция ядра
+gcc -m32 -ffreestanding -nostdlib -c src/kernel/PMocero.c -o PMocero.o
+gcc -m32 -ffreestanding -nostdlib -c src/kernel/commands.c -o commands.o
+gcc -m32 -ffreestanding -nostdlib -c src/kernel/read_keyboard.c -o read_keyboard.o
+gcc -m32 -ffreestanding -nostdlib -c src/kernel/ata.c -o ata.o
+gcc -m32 -ffreestanding -nostdlib -c src/kernel/video.c -o video.o
+gcc -m32 -ffreestanding -nostdlib -c src/kernel/elf.c -o elf.o
+gcc -m32 -ffreestanding -nostdlib -c src/kernel/init.c -o init.o
+gcc -m32 -ffreestanding -nostdlib -c src/kernel/Twindows.c -o Twindows.o
+gcc -m32 -ffreestanding -nostdlib -c src/kernel/fs/OFS.c -o OFS.o
+
+# 3. Линковка
+ld -m elf_i386 -T src/boot/linker.ld -o OceroOS.elf boot.o PMocero.o commands.o read_keyboard.o ata.o video.o elf.o init.o Twindows.o OFS.o
+
+# 4. Запуск в QEMU
+qemu-system-i386 -kernel OceroOS.elf
+----
+
+=== Сборка через Makefile
+
+[source,bash]
+----
+make          # Собрать всё
+make clean    # Очистить объектные файлы
+make rebuild  # Пересобрать с нуля
+make run      # Собрать и запустить в QEMU
+----
+
+=== Запуск на железе
+
+[source,bash]
+----
+# 1. Создать ISO-образ
+mkdir -p iso/boot/grub
+cp OceroOS.elf iso/boot/
+cp grub/grub.cfg iso/boot/grub/
+grub-mkrescue -o OceroOS-32.iso iso/
+
+# 2. Записать на флешку
+sudo dd if=OceroOS-32.iso of=/dev/sdX bs=4M status=progress
+
+# 3. Загрузиться с флешки в режиме BIOS/Legacy
+----
+
+== Структура
+
+[source,tree]
+----
+OceroOS-32/
+├── grub/
+│   └── grub.cfg
+├── docs/
+│   └── COMMANDS.md
+├── src/
+│   ├── boot/
+│   │   ├── boot.asm
+│   │   └── linker.ld
+│   └── kernel/
+│       ├── fs/
+│       │   ├── OFS.c
+│       │   └── README.adoc
+│       ├── PMocero.c
+│       ├── Twindows.c
+│       ├── ata.c
+│       ├── commands.c
+│       ├── elf.c
+│       ├── init.c
+│       ├── read_keyboard.c
+│       └── video.c
+├── images/
+├── LICENSE.adoc
+└── README.adoc
+----
+
+== Команды
+
+| Команда | Описание |
+|---------|----------|
+| help | Справка |
+| clear | Очистка |
+| reboot | Перезагрузка |
+| shutdown | Выключение |
+| echo | Вывод текста |
+| edit | Редактор |
+| notes | Показать заметку |
+| save | Сохранить заметку |
+| load | Загрузить заметку |
+| ls | Список файлов |
+| cat | Показать файл |
+| write | Создать файл |
+| run | Запустить ELF |
+| settings | Меню |
+| note2 | Окно с заметкой |
+| disk | Окно с диском |
+| tt | Тестовое окно |
+| par | Табличные команды |
+
+== Лицензия
+
+=== GNU General Public License v3.0
+
+Copyright (c) 2026 Vlad944467
+
+Эта программа — свободное программное обеспечение. Вы можете распространять и/или изменять её в соответствии с условиями GNU General Public License, опубликованной Free Software Foundation, либо версии 3 лицензии, либо (по вашему выбору) любой более поздней версии.
+
+=== Что разрешено
+
+* ✅ Использовать код в любых целях (включая коммерческие)
+* ✅ Изменять код
+* ✅ Распространять копии
+* ✅ Распространять изменённые версии
+
+=== Что запрещено
+
+* ❌ Закрывать исходный код (если вы распространяете программу)
+* ❌ Убирать уведомление об авторских правах
+* ❌ Использовать без указания авторства
+
+=== Что обязательно
+
+* 📌 Указывать оригинального автора (Vlad944467)
+* 📌 Сохранять уведомление о лицензии в коде
+* 📌 Распространять изменения под той же лицензией GPLv3
+* 📌 Предоставлять доступ к исходному коду при распространении
+
+=== Полный текст
+
+Полный текст лицензии: https://www.gnu.org/licenses/gpl-3.0.html
+
+== Автор
+
+Vlad944467
+GitHub: https://github.com/Vlad944467/OceroOS-32
