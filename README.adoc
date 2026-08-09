@@ -1,116 +1,146 @@
 = OceroOS-32
 :author: Vlad944467
-:revdate: 2026-07-28
+:revdate: 2026-08-09
 :lang: ru
 
 image:https://img.shields.io/badge/OS-32--bit-blue.svg[32-bit]
 image:https://img.shields.io/badge/lang-C-blue.svg[C]
 image:https://img.shields.io/badge/license-GPLv3-green.svg[GPLv3]
 
-**32-битная монолитная ОС, написанное на C и Assembly**
+**32-битная монолитная ОС с TUI (Text User Interface), написанная на C и Assembly**
 
+Работает на реальном железе (BIOS) и в эмуляторах (QEMU).
+
+image:https://via.placeholder.com/800x450/0x0000AA/0xFFFFFF?text=OceroOS-32+TUI[OceroOS-32,800,450]
 
 == Возможности
 
+=== Ядро и система
 * 32-битный защищённый режим
-* Загрузка по стандарту Multiboot (GRUB/QEMU)
-* Поддержка клавиатуры PS/2
-* Текстовый режим VGA (80x25, 16 цветов)
-* Звук через PC Speaker
-* Запуск ELF программ
-* Встроенные команды: `help`, `clear`, `reboot`, `echo`, `win`, `cat`, `fetch`, `run`, `settings`
-* ATA драйвер (чтение/запись секторов)
-* OFS — собственная файловая система
-* Текстовые окна (псевдографика)
-* Собственный шелл с историей команд
+* Загрузка по стандарту Multiboot (GRUB)
 * Монолитное ядро
+* Собственный шелл с историей команд
 
+=== Драйверы
+* Клавиатура PS/2
+* VGA текстовый режим (80x25, 16 цветов)
+* ATA/PATA драйвер (чтение/запись секторов)
+* PC Speaker (звук)
+
+=== Файловая система
+* OFS — собственная файловая система
+* Создание, чтение, запись файлов
+
+=== Интерфейс
+* Псевдографические окна (TUI)
+* Рамка по краям экрана (как в BIOS/TempleOS)
+* Текстовый редактор
+* Команды для работы с файлами
+
+=== Загрузка программ
+* ELF-загрузчик (запуск 32-bit программ)
+* Поддержка статически скомпилированных ELF
 
 == Сборка и запуск
 
+=== Требования
+
+Для Ubuntu/Debian:
+
+[source,bash]
+----
+sudo apt install gcc nasm qemu-system-x86 make
+sudo apt install gcc-multilib
+----
+
 === Ручная сборка
 
-.Сборка загрузчика
 [source,bash]
 ----
-nasm -f elf32 boot/boot.asm -o boot.o
-----
+# Сборка загрузчика
+nasm -f elf32 src/boot/boot.asm -o boot.o
 
-.Компиляция ядра
-[source,bash]
-----
-gcc -m32 -ffreestanding -nostdlib -c kernel/PMocero.c -o PMocero.o
-gcc -m32 -ffreestanding -nostdlib -c kernel/commands.c -o commands.o
-gcc -m32 -ffreestanding -nostdlib -c kernel/read_keyboard.c -o read_keyboard.o
-gcc -m32 -ffreestanding -nostdlib -c kernel/ata.c -o ata.o
-gcc -m32 -ffreestanding -nostdlib -c kernel/video.c -o video.o
-gcc -m32 -ffreestanding -nostdlib -c kernel/elf.c -o elf.o
-gcc -m32 -ffreestanding -nostdlib -c kernel/init.c -o init.o
-gcc -m32 -ffreestanding -nostdlib -c kernel/fs/OFS.c -o OFS.o
-gcc -m32 -ffreestanding -nostdlib -c kernel/windows.c -o windows.o
-----
+# Компиляция ядра
+gcc -m32 -ffreestanding -nostdlib -c src/kernel/PMocero.c -o PMocero.o
+gcc -m32 -ffreestanding -nostdlib -c src/kernel/commands.c -o commands.o
+gcc -m32 -ffreestanding -nostdlib -c src/kernel/read_keyboard.c -o read_keyboard.o
+gcc -m32 -ffreestanding -nostdlib -c src/kernel/ata.c -o ata.o
+gcc -m32 -ffreestanding -nostdlib -c src/kernel/video.c -o video.o
+gcc -m32 -ffreestanding -nostdlib -c src/kernel/elf.c -o elf.o
+gcc -m32 -ffreestanding -nostdlib -c src/kernel/init.c -o init.o
+gcc -m32 -ffreestanding -nostdlib -c src/kernel/Twindows.c -o Twindows.o
+gcc -m32 -ffreestanding -nostdlib -c src/kernel/fs/OFS.c -o OFS.o
 
-.Линковка
-[source,bash]
-----
-ld -m elf_i386 -T boot/linker.ld -o OceroOS.elf boot.o PMocero.o commands.o read_keyboard.o ata.o video.o elf.o init.o OFS.o windows.o
+# Линковка
+ld -m elf_i386 -T src/boot/linker.ld -o OceroOS.elf boot.o PMocero.o commands.o read_keyboard.o ata.o video.o elf.o init.o Twindows.o OFS.o
 ----
 
 === Сборка через Makefile
 
 [source,bash]
 ----
-make
-make clean
-make rebuild
-make run
+make          # Собрать ядро
+make clean    # Очистить объектные файлы
+make rebuild  # Пересобрать с нуля
+make run      # Запустить в QEMU
 ----
 
 === Запуск в QEMU
 
 [source,bash]
 ----
+# Только ядро
 qemu-system-i386 -kernel OceroOS.elf
+
+# С диском (для ATA/OFS)
+qemu-system-i386 -kernel OceroOS.elf -hda fat16.img
+
+# С отладкой
+qemu-system-i386 -kernel OceroOS.elf -serial stdio
 ----
 
-=== Запуск с диском (для ATA/OFS)
+=== Запуск на реальном железе
 
 [source,bash]
 ----
-qemu-system-i386 -kernel OceroOS.elf -hda fat16.img
-----
+# 1. Собрать ISO-образ
+grub-mkrescue -o OceroOS-32.iso iso/
 
+# 2. Записать на флешку
+sudo dd if=OceroOS-32.iso of=/dev/sdX bs=4M status=progress
+
+# 3. Загрузиться с флешки (BIOS/Legacy режим)
+----
 
 == Структура проекта
 
 [source,tree]
 ----
-OceroOS-32/       
+OceroOS-32/
 ├── grub/
-│   └── grub.cfg         
+│   └── grub.cfg              # Конфигурация GRUB
 ├── docs/
-│   └── COMMANDS.md
+│   └── COMMANDS.md           # Документация по командам
 ├── src/
 │   ├── boot/
-│   │   ├── boot.asm
-│   │   └── linker.ld 
+│   │   ├── boot.asm          # Multiboot-загрузчик
+│   │   └── linker.ld         # Скрипт линковки
 │   └── kernel/
 │       ├── fs/
-│       │   ├── OFS.c
-│       │   └── README.adoc
-│       ├── PMocero.c
-│       ├── Twindows.c
-│       ├── ata.c
-│       ├── commands.c
-│       ├── elf.c
-│       ├── init.c
-│       ├── read_keyboard.c
-│       └── video.c   
-├── images/
-├── LICENSE.adoc 
-└── README.adoc
+│       │   ├── OFS.c         # Файловая система OFS
+│       │   └── README.adoc   # Документация OFS
+│       ├── PMocero.c         # Менеджер памяти
+│       ├── Twindows.c        # Оконная система (TUI)
+│       ├── ata.c             # ATA-драйвер
+│       ├── commands.c        # Команды шелла
+│       ├── elf.c             # ELF-загрузчик
+│       ├── init.c            # Инициализация системы
+│       ├── read_keyboard.c   # PS/2 драйвер
+│       └── video.c           # VGA вывод
+├── images/                   # Скриншоты, иконки
+├── LICENSE.adoc              # Лицензия GPLv3
+└── README.adoc               # Этот файл
 ----
-
 
 == Команды
 
@@ -120,24 +150,24 @@ OceroOS-32/
 |===
 | Команда | Описание
 | `help` | Показать справку
-| `clear` | Очистить экран
+| `clear` | Очистить экран (с сохранением рамки)
 | `reboot` | Перезагрузить систему
 | `shutdown` | Выключить систему
-| `echo` | Вывести текст
+| `echo <текст>` | Вывести текст
 | `edit` | Текстовый редактор
 | `notes` | Показать сохранённую заметку
 | `save` | Сохранить заметку на диск
 | `load` | Загрузить заметку с диска
-| `bgcolor` | Сменить цвет фона (0-F)
-| `fetch` | Информация об ОС
+| `bgcolor <0-F>` | Сменить цвет фона
+| `fetch` | Показать информацию об ОС
 | `ls` | Список файлов в OFS
 | `cat <файл>` | Показать содержимое файла
-| `write <файл> <текст>` | Создать файл
-| `run <сектор>` | Запустить ELF программу с диска
+| `write <файл> <текст>` | Создать/перезаписать файл
+| `run <сектор>` | Запустить ELF-программу с диска
 | `settings` | Меню настроек (Reboot/Shutdown/Cancel)
 |===
 
-=== Окна (псевдографика)
+=== Оконные команды (TUI)
 
 [cols="1,3"]
 |===
@@ -155,12 +185,11 @@ OceroOS-32/
 | `par help` | Справка по табличным командам
 | `par hello` | Приветствие
 | `par time` | Показать время
-| `par calc` | Калькулятор (например: `par calc 2+3`)
-| `par sleep` | Пауза
-| `par bgcolor` | Сменить цвет фона
+| `par calc 2+3` | Калькулятор
+| `par sleep 5` | Пауза на N секунд
+| `par bgcolor 1` | Сменить цвет фона
 | `par edit` | Редактор
 | `par clear` | Очистка экрана
-| `par type` | Узнать тип команды
 |===
 
 === Команда `run`
@@ -178,7 +207,10 @@ run 10
 
 [source,bash]
 ----
+# Сборка программы
 gcc -static -m32 -nostdlib -fno-stack-protector -no-pie -Wl,-Ttext=0x100000 -o hello.elf hello.c
+
+# Запись в сектор 10
 sudo dd if=hello.elf of=fat16.img bs=512 seek=10 conv=notrunc
 ----
 
@@ -197,8 +229,49 @@ void _start() {
 }
 ----
 
+== Архитектура TUI
+
+Оконная система OceroOS-32 построена на псевдографике (текстовый режим VGA 80x25):
+
+* **Рамка экрана**: двойная рамка `╔═╗ ║ ╚═╝` по краям (как в BIOS/TempleOS)
+* **Окна**: сохраняют фон при открытии и восстанавливают при закрытии
+* **Цвета**: настраиваются через команду `bgcolor`
+
+image:https://via.placeholder.com/800x450/0x0000AA/0xFFFFFF?text=TUI+Window+Example[Пример окна,800,450]
+
+== Планы
+
+=== Ближайшие (до 1.0)
+
+* [ ] Поддержка мыши (PS/2)
+* [ ] Движение окон (Alt + стрелки)
+* [ ] Несколько окон (переключение Tab)
+* [ ] Двойная буферизация для окон
+
+=== Среднесрочные
+
+* [ ] Многозадачность (переключение процессов)
+* [ ] Поддержка FAT32 (чтение файлов)
+* [ ] Собственный загрузчик (без GRUB)
+* [ ] Графический режим VBE
+
+=== Долгосрочные
+
+* [ ] Сетевая подсистема (TCP/IP)
+* [ ] Поддержка USB
+* [ ] Звуковой драйвер (SoundBlaster)
+* [ ] Поддержка UEFI
+
+== Известные проблемы
+
+* Не работает на UEFI-системах (только BIOS/Legacy)
+* Нет поддержки мыши
+* Только текстовый режим (без графики)
+* Нет многозадачности
 
 == Зависимости
+
+=== Системные
 
 * `gcc` (с поддержкой `-m32`)
 * `nasm`
@@ -206,14 +279,29 @@ void _start() {
 * `qemu-system-x86` (для запуска)
 * `make`
 
-Для Ubuntu/Debian:
+=== Установка на Ubuntu/Debian
 
 [source,bash]
 ----
+sudo apt update
 sudo apt install gcc nasm qemu-system-x86 make
 sudo apt install gcc-multilib
 ----
 
+== Вклад в проект
+
+Хотите помочь? Вы можете:
+
+1. **Форкнуть** репозиторий
+2. **Создать** новую ветку (`git checkout -b feature/amazing`)
+3. **Внести** изменения
+4. **Отправить** Pull Request
+
+Идеи для вклада:
+* Драйверы (мышь, звук, USB)
+* Оптимизация ядра
+* Документация
+* Тестирование на реальном железе
 
 == Лицензия
 
@@ -236,9 +324,18 @@ Copyright (c) 2026 Vlad944467
 
 Полный текст лицензии: https://www.gnu.org/licenses/gpl-3.0.html
 
+== Благодарности
 
-== Автор
+* **OSDev Wiki** — за бесценную информацию
+* **Сообщество OSDev** — за поддержку
+* **Terry Davis (TempleOS)** — за вдохновение в TUI
 
-*Vlad944467*
+== Контакты
 
-GitHub: https://github.com/Vlad944467/OceroOS-32
+* **Автор**: Vlad944467
+* **GitHub**: https://github.com/Vlad944467/OceroOS-32
+* **Issues**: https://github.com/Vlad944467/OceroOS-32/issues
+
+---
+
+**Сделано с любовью к низкоуровневому программированию** ❤️
