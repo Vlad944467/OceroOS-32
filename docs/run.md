@@ -1,6 +1,6 @@
-# Запуск BitOS-32
+# Запуск OceroOS-32
 
 ## В QEMU
 
 ```bash
-qemu-system-i386 -kernel BitOS.elf
+qemu-system-i386 -kernel OceroOS.elf
